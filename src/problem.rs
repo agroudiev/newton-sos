@@ -3,6 +3,15 @@
 
 use faer::prelude::*;
 
+pub enum Kernel {
+    Laplacian(f64),
+    Gaussian(f64)
+}
+
+pub enum ProblemError {
+    KernelAlreadyInitialized,
+}
+
 #[allow(non_snake_case)]
 #[derive(Debug, Clone)]
 /// Represents an instance of the following optimization problem:
@@ -50,5 +59,36 @@ impl Problem {
             phi: None,
             K: None,
         }
+    }
+
+    pub fn initialize_native_kernel(&mut self, kernel: Kernel) -> Result<(), ProblemError>{
+        if self.K.is_some() || self.phi.is_some() {
+            return Err(ProblemError::KernelAlreadyInitialized);
+        }
+
+        let n_samples = self.x_samples.nrows();
+        let x_samples = &self.x_samples;
+
+        // Define the kernel function based on the selected kernel type
+        let kernel_function: Box<dyn Fn(usize, usize) -> f64> = match kernel {
+            Kernel::Laplacian(sigma) => {
+                Box::new(move |i: usize, j: usize| {
+                    let diff = x_samples.row(i) - x_samples.row(j);
+                    (-diff.norm_l2() / sigma).exp()
+                })
+            },
+            Kernel::Gaussian(sigma) => {
+                Box::new(move |i: usize, j: usize| {
+                    let diff = x_samples.row(i) - x_samples.row(j);
+                    (-diff.norm_l2().powi(2) / (2.0 * sigma.powi(2))).exp()
+                })
+            },
+        };
+
+        // Compute the kernel matrix using the defined kernel function
+        let kernel_matrix = Mat::<f64>::from_fn(n_samples, n_samples, kernel_function);
+        self.K = Some(kernel_matrix);
+
+        Ok(())
     }
 }

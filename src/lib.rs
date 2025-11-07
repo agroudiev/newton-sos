@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 
-mod problem;
-mod solver;
+pub mod problem;
+pub mod solver;
 
 mod py_problem;
 mod py_solver;

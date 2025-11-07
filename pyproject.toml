@@ -1,0 +1,18 @@
+[build-system]
+requires = ["maturin>=1.8,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "newton_sos"
+authors = [{ name = "Antoine Groudiev", email = "antoine.groudiev@ens.psl.eu"}]
+readme = "README.md"
+description = "Damped Newton method to solve low-rank problems arising from KernelSOS and Sum-of-Squares relaxations"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+[tool.maturin]
+features = ["pyo3/extension-module"]

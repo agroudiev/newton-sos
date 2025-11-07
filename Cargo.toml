@@ -12,3 +12,6 @@ faer = "0.23.2"
 numpy = "0.24.0"
 pyo3 = { version = "0.24.1", features = ["extension-module"] }
 rand = { version = "0.9.1" }
+
+[profile.dev.package.faer]
+opt-level = 3

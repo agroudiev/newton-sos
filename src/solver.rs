@@ -1,5 +1,6 @@
 use crate::problem::Problem;
 use faer::{Side, linalg::solvers::LltError, prelude::*};
+use std::f64;
 
 #[derive(Debug)]
 #[allow(non_snake_case)]
@@ -39,11 +40,17 @@ impl SolveResult {
     }
 
     /// Creates a new `SolveResult` instance for a successful solve.
-    fn new_success(iterations: usize, status: String) -> Self {
+    fn new_success(
+        iterations: usize,
+        status: String,
+        z_hat: Mat<f64>,
+        cost: f64,
+        alpha: Mat<f64>,
+    ) -> Self {
         SolveResult {
-            z_hat: None,
-            cost: None,
-            alpha: None,
+            z_hat: Some(z_hat),
+            cost: Some(cost),
+            alpha: Some(alpha),
             iterations,
             B: None,
             X: None,
@@ -116,8 +123,10 @@ pub fn solve(problem: &Problem, max_iter: usize, verbose: bool) -> Result<SolveR
     let mut converged = false;
     let mut status = String::new();
     let mut final_iter = None;
+    let mut cost = f64::INFINITY;
     for iter in 0..max_iter {
-        let (delta, c, lambda_alpha_sq) = solve_newton_system(problem, &alpha)?;
+        let (delta, new_cost, lambda_alpha_sq) = solve_newton_system(problem, &alpha)?;
+        cost = new_cost;
         let stepsize = 1.0 / (1.0 + (1.0 / problem.t * lambda_alpha_sq).sqrt());
         alpha -= stepsize * &delta;
 
@@ -141,9 +150,23 @@ pub fn solve(problem: &Problem, max_iter: usize, verbose: bool) -> Result<SolveR
     }
 
     if converged {
-        unimplemented!("need to compute the final results");
-        Ok(SolveResult::new_success(max_iter, status))
+        let z_hat = Mat::<f64>::from_fn(problem.x_samples.ncols(), 1, |j, _| {
+            (0..n)
+                .map(|i| alpha[(i, 0)] * problem.x_samples[(i, j)])
+                .sum()
+        });
+
+        Ok(SolveResult::new_success(
+            max_iter, status, z_hat, cost, alpha,
+        ))
     } else {
-        Ok(SolveResult::new_failed(final_iter.unwrap(), status))
+        let final_iter = match final_iter {
+            Some(it) => it,
+            None => {
+                status = format!("Maximum iteration ({}) reached", max_iter);
+                max_iter
+            }
+        };
+        Ok(SolveResult::new_failed(final_iter, status))
     }
 }

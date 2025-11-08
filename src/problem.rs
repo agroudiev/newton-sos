@@ -40,17 +40,17 @@ pub enum ProblemError {
 /// ```
 pub struct Problem {
     /// Trace penalty
-    lambda: f64,
+    pub(crate) lambda: f64,
     /// Relative precision (`epsilon / n_samples`)
-    t: f64,
+    pub(crate) t: f64,
     /// Sample points
-    x_samples: Mat<f64>,
+    pub(crate) x_samples: Mat<f64>,
     /// Function values at the samples
-    f_samples: Mat<f64>,
+    pub(crate) f_samples: Mat<f64>,
     /// Features matrix (columns of the Cholesky factor `R` of the kernel matrix `K`)
-    phi: Option<Mat<f64>>,
+    pub(crate) phi: Option<Mat<f64>>,
     /// Kernel matrix `K`
-    K: Option<Mat<f64>>,
+    pub(crate) K: Option<Mat<f64>>,
 }
 
 impl Problem {
@@ -74,6 +74,12 @@ impl Problem {
                 "Number of x_samples ({}) must match number of f_samples ({}).",
                 x_samples.nrows(),
                 f_samples.nrows()
+            )));
+        }
+        if f_samples.ncols() != 1 {
+            return Err(ProblemError::InvalidParameter(format!(
+                "f_samples must be a column vector (got {} columns).",
+                f_samples.ncols()
             )));
         }
         if x_samples.nrows() == 0 {
@@ -155,9 +161,10 @@ impl Problem {
             .llt(Side::Lower)
             .map_err(ProblemError::FaerLltError)?;
         let r = llt.L();
+        // TODO: implement other decompositions (LDLT, ...)
 
         self.K = Some(kernel_matrix);
-        self.phi = Some(r.to_owned());
+        self.phi = Some(r.transpose().to_owned());
 
         Ok(())
     }

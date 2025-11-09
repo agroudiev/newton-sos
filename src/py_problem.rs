@@ -1,7 +1,7 @@
-use crate::problem::Problem;
+use crate::problem::{Kernel, Problem};
 use faer_ext::IntoFaer;
-use numpy::PyReadonlyArrayDyn;
-use numpy::ndarray;
+use numpy::{PyReadonlyArrayDyn, ndarray};
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 
 #[pyclass(name = "Problem")]
@@ -38,7 +38,26 @@ impl PyProblem {
                 x_samples_mat.to_owned(),
                 f_samples_mat.to_owned(),
             )
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("{:#?}", e)))?,
+            .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("{:#?}", e)))?,
         })
+    }
+
+    #[pyo3(signature = (kernel, sigma))]
+    pub fn initialize_native_kernel(&mut self, kernel: String, sigma: f64) -> PyResult<()> {
+        let kernel = match kernel.as_str() {
+            "gaussian" => Kernel::Gaussian(sigma),
+            "laplacian" => Kernel::Laplacian(sigma),
+            _ => {
+                return Err(PyErr::new::<PyRuntimeError, _>(format!(
+                    "Unsupported kernel type: {}. Supported types are 'gaussian' and 'laplacian'.",
+                    kernel
+                )));
+            }
+        };
+        self.inner
+            .initialize_native_kernel(kernel)
+            .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("{:#?}", e)))?;
+
+        Ok(())
     }
 }

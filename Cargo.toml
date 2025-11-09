@@ -9,9 +9,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 faer = "0.23.2"
-numpy = "0.24.0"
-pyo3 = { version = "0.24.1", features = ["extension-module"] }
-rand = { version = "0.9.1" }
+faer-ext = { version = "0.7.1", features = ["ndarray"] }
+numpy = "0.26.0"
+pyo3 = { version = "0.26.0", features = ["extension-module"] }
 
 [profile.dev.package.faer]
 opt-level = 3

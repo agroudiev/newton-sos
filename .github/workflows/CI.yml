@@ -117,12 +117,14 @@ jobs:
         run: cargo build --verbose
       - name: Run Rust tests
         run: cargo test --verbose
-      - name: Install maturin and project Python wheel
-        run: |
-          pip install maturin
-          maturin develop --release
+      - name: Install maturin
+        run: pip install maturin
+      - name: Build Python wheel
+        run: maturin build --release --out dist
+      - name: Install Python wheel
+        run: pip install dist/*.whl
       - name: Run Python unittests
-        run: python -m unittest
+        run: python -m unittest discover newton_sos
 
   sdist:
     runs-on: ubuntu-latest

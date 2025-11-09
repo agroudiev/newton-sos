@@ -3,10 +3,7 @@ repos:
     rev: 24.8.0
     hooks:
       - id: black
-  - repo: local
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
     hooks:
-      - id: cargo-fmt
-        name: cargo fmt
-        entry: cargo fmt --all
-        language: system
-        types: [rust]
+      - id: fmt

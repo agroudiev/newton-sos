@@ -82,10 +82,23 @@ pub(crate) fn h_pprime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> 
     })
 }
 
+/// Methods for solving the Newton system
+#[derive(Debug, Clone, Copy)]
+pub enum SystemSolveMethod {
+    /// Cholesky decomposition (LLT), only if the matrix is not positive definite
+    Llt,
+    /// Partial pivoting LU decomposition (fast but less stable)
+    PartialPivLu,
+    /// Full pivoting LU decomposition (more stable but slower)
+    FullPivLu
+}
+
 #[allow(non_snake_case)]
+/// Solves the Newton system for the given problem and dual variables `alpha`.
 pub(crate) fn solve_newton_system(
     problem: &Problem,
     alpha: &Mat<f64>,
+    method: &SystemSolveMethod,
 ) -> Result<(Mat<f64>, f64, f64), SolveError> {
     let n = problem.f_samples.nrows();
     let K = match &problem.K {
@@ -98,13 +111,21 @@ pub(crate) fn solve_newton_system(
     for i in 0..K_tilde.nrows() {
         K_tilde[(i, i)] += problem.lambda / alpha[(i, 0)];
     }
-    // TODO: find a way to avoid computing the LLT at each iteration
+    // TODO: find a way to avoid computing the decomposition at each iteration
 
     // C is the term K (K + lambd * Diag(a)^-1)^-1
-    let C = K_tilde
-        .llt(Side::Lower)
-        .map_err(SolveError::LltError)?
-        .solve(&K);
+    let C = match method {
+        SystemSolveMethod::Llt => {
+            let K_tilde_llt = K_tilde.llt(Side::Lower).map_err(SolveError::LltError)?;
+            K_tilde_llt.solve(&K)
+        }
+        SystemSolveMethod::PartialPivLu => {
+            K_tilde.partial_piv_lu().solve(&K)
+        }
+        SystemSolveMethod::FullPivLu => {
+            K_tilde.full_piv_lu().solve(&K)
+        }
+    };
     let C = C.transpose();
     let H_p = h_prime(problem, alpha, &C);
     let H_pp = h_pprime(problem, alpha, &C);
@@ -121,13 +142,15 @@ pub(crate) fn solve_newton_system(
     Ok((delta, c, lambda_alpha_sq))
 }
 
-pub fn solve(problem: &Problem, max_iter: usize, verbose: bool) -> Result<SolveResult, SolveError> {
+/// Solves the optimization problem using the damped Newton method.
+pub fn solve(problem: &Problem, max_iter: usize, verbose: bool, method: Option<SystemSolveMethod>) -> Result<SolveResult, SolveError> {
     let n = problem.f_samples.nrows();
     let mut alpha = (1.0 / n as f64) * Mat::<f64>::ones(n, 1);
+    let method = method.unwrap_or(SystemSolveMethod::PartialPivLu);
 
     if verbose {
-        println!(" it |   cost   | lambda d | step size ");
-        println!("----|----------|----------|----------");
+        println!(" it |    cost   |  lambda d | step size ");
+        println!("----|-----------|-----------|----------");
     }
 
     let mut converged = false;
@@ -135,7 +158,7 @@ pub fn solve(problem: &Problem, max_iter: usize, verbose: bool) -> Result<SolveR
     let mut final_iter = None;
     let mut cost = f64::INFINITY;
     for iter in 0..max_iter {
-        let (delta, new_cost, lambda_alpha_sq) = solve_newton_system(problem, &alpha)?;
+        let (delta, new_cost, lambda_alpha_sq) = solve_newton_system(problem, &alpha, &method)?;
         cost = new_cost;
         let stepsize = 1.0 / (1.0 + (1.0 / problem.t * lambda_alpha_sq).sqrt());
         alpha -= stepsize * &delta;
@@ -155,7 +178,7 @@ pub fn solve(problem: &Problem, max_iter: usize, verbose: bool) -> Result<SolveR
         }
 
         if verbose {
-            println!("{iter:>3} | {cost:+.3e} | {lambda_alpha_sq:+.3e} | {stepsize:+.3e}");
+            println!("{iter:>3} | {cost:+.4e} | {lambda_alpha_sq:+.4e} | {stepsize:+.4e}");
         }
     }
 

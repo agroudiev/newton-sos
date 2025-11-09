@@ -90,7 +90,7 @@ pub enum SystemSolveMethod {
     /// Partial pivoting LU decomposition (fast but less stable)
     PartialPivLu,
     /// Full pivoting LU decomposition (more stable but slower)
-    FullPivLu
+    FullPivLu,
 }
 
 #[allow(non_snake_case)]
@@ -119,12 +119,8 @@ pub(crate) fn solve_newton_system(
             let K_tilde_llt = K_tilde.llt(Side::Lower).map_err(SolveError::LltError)?;
             K_tilde_llt.solve(&K)
         }
-        SystemSolveMethod::PartialPivLu => {
-            K_tilde.partial_piv_lu().solve(&K)
-        }
-        SystemSolveMethod::FullPivLu => {
-            K_tilde.full_piv_lu().solve(&K)
-        }
+        SystemSolveMethod::PartialPivLu => K_tilde.partial_piv_lu().solve(&K),
+        SystemSolveMethod::FullPivLu => K_tilde.full_piv_lu().solve(&K),
     };
     let C = C.transpose();
     let H_p = h_prime(problem, alpha, &C);
@@ -143,7 +139,12 @@ pub(crate) fn solve_newton_system(
 }
 
 /// Solves the optimization problem using the damped Newton method.
-pub fn solve(problem: &Problem, max_iter: usize, verbose: bool, method: Option<SystemSolveMethod>) -> Result<SolveResult, SolveError> {
+pub fn solve(
+    problem: &Problem,
+    max_iter: usize,
+    verbose: bool,
+    method: Option<SystemSolveMethod>,
+) -> Result<SolveResult, SolveError> {
     let n = problem.f_samples.nrows();
     let mut alpha = (1.0 / n as f64) * Mat::<f64>::ones(n, 1);
     let method = method.unwrap_or(SystemSolveMethod::PartialPivLu);
@@ -190,7 +191,11 @@ pub fn solve(problem: &Problem, max_iter: usize, verbose: bool, method: Option<S
         });
 
         Ok(SolveResult::new_success(
-            max_iter, status, z_hat, cost, alpha,
+            final_iter.unwrap(),
+            status,
+            z_hat,
+            cost,
+            alpha,
         ))
     } else {
         let final_iter = match final_iter {

@@ -1,5 +1,6 @@
 use crate::problem::Kernel;
 use crate::problem::Problem;
+use crate::solver::SystemSolveMethod;
 use crate::solver::{h_pprime, h_prime, solve, solve_newton_system};
 use approx::assert_relative_eq;
 use faer::prelude::*;
@@ -69,7 +70,8 @@ fn solve_newton_polynomial() {
     let alpha = Mat::<f64>::from_fn(n, 1, |i, _| (i + 1) as f64);
 
     let (delta, c, lambda_alpha_sq) =
-        solve_newton_system(&problem, &alpha).expect("Failed to solve Newton system");
+        solve_newton_system(&problem, &alpha, &SystemSolveMethod::Llt)
+            .expect("Failed to solve Newton system");
     let expected_delta = mat![[452.6398592919037], [-452.6398592919036]];
     let expected_c = 22.764461650286353;
     let expected_lambda_alpha_sq = 12577.897878226704;
@@ -79,13 +81,15 @@ fn solve_newton_polynomial() {
     assert_eq!(lambda_alpha_sq, expected_lambda_alpha_sq);
 }
 
-// #[test]
-// fn solve_polynomial() {
-//     let problem = build_polynomial_problem(10);
+#[test]
+fn solve_polynomial() {
+    let problem = build_polynomial_problem(10);
 
-//     let result = solve(&problem, 100, true);
-//     assert!(result.is_ok());
+    let result = solve(&problem, 100, true, None);
+    assert!(result.is_ok());
 
-//     let solution = result.unwrap();
-//     assert!(solution.converged);
-// }
+    let solution = result.unwrap();
+    assert!(solution.converged);
+    assert_eq!(solution.iterations, 10);
+    assert_relative_eq!(solution.z_hat.unwrap()[(0, 0)], 0.01939745, epsilon = 1e-7);
+}

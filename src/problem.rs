@@ -186,7 +186,7 @@ mod tests {
     fn test_problem_initialization_gaussian() {
         let n = 10;
         let x_samples = Mat::<f64>::from_fn(n, 20, |i, j| (i + j) as f64);
-        let f_samples = Mat::<f64>::from_fn(n, 30, |i, _| i as f64);
+        let f_samples = Mat::<f64>::from_fn(n, 1, |i, _| i as f64);
 
         let problem = Problem::new(1.0, 1.0, x_samples, f_samples);
         assert!(problem.is_ok());
@@ -200,7 +200,7 @@ mod tests {
     fn test_problem_initialization_laplacian() {
         let n = 10;
         let x_samples = Mat::<f64>::from_fn(n, 20, |i, j| (i + j) as f64);
-        let f_samples = Mat::<f64>::from_fn(n, 30, |i, _| i as f64);
+        let f_samples = Mat::<f64>::from_fn(n, 1, |i, _| i as f64);
 
         let problem = Problem::new(1.0, 1.0, x_samples, f_samples);
         assert!(problem.is_ok());
@@ -208,5 +208,15 @@ mod tests {
             .unwrap()
             .initialize_native_kernel(Kernel::Laplacian(1.0));
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_problem_f_non_real() {
+        let n = 10;
+        let x_samples = Mat::<f64>::from_fn(n, 20, |i, j| (i + j) as f64);
+        let f_samples = Mat::<f64>::from_fn(n, 30, |i, _| i as f64);
+
+        let problem = Problem::new(1.0, 1.0, x_samples, f_samples);
+        assert!(problem.is_err());
     }
 }

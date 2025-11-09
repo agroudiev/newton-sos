@@ -15,3 +15,6 @@ rand = { version = "0.9.1" }
 
 [profile.dev.package.faer]
 opt-level = 3
+
+[dev-dependencies]
+approx = "0.5.0"

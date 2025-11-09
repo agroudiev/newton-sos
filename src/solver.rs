@@ -60,12 +60,13 @@ impl SolveResult {
     }
 }
 
+#[derive(Debug)]
 pub enum SolveError {
     ProblemNotInitialized,
     LltError(LltError),
 }
 
-fn h_prime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {
+pub(crate) fn h_prime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {
     // FIXME: optimize
     let n = problem.f_samples.nrows();
     Mat::<f64>::from_fn(n, 1, |i, _| {
@@ -73,7 +74,7 @@ fn h_prime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {
     })
 }
 
-fn h_pprime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {
+pub(crate) fn h_pprime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {
     // FIXME: optimize
     let n = problem.f_samples.nrows();
     Mat::<f64>::from_fn(n, n, |i, j| {
@@ -82,7 +83,7 @@ fn h_pprime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {
 }
 
 #[allow(non_snake_case)]
-fn solve_newton_system(
+pub(crate) fn solve_newton_system(
     problem: &Problem,
     alpha: &Mat<f64>,
 ) -> Result<(Mat<f64>, f64, f64), SolveError> {
@@ -97,18 +98,22 @@ fn solve_newton_system(
     for i in 0..K_tilde.nrows() {
         K_tilde[(i, i)] += problem.lambda / alpha[(i, 0)];
     }
+    // TODO: find a way to avoid computing the LLT at each iteration
 
     // C is the term K (K + lambd * Diag(a)^-1)^-1
-    let C = problem.K_llt.as_ref().unwrap().solve(&K_tilde);
+    let C = K_tilde
+        .llt(Side::Lower)
+        .map_err(SolveError::LltError)?
+        .solve(&K);
     let C = C.transpose();
     let H_p = h_prime(problem, alpha, &C);
     let H_pp = h_pprime(problem, alpha, &C);
     let H_pp_solver = H_pp.llt(Side::Lower).map_err(SolveError::LltError)?;
 
-    let denominator = H_pp_solver.solve(&Mat::<f64>::ones(n, 1));
+    let denominator = H_pp_solver.solve(&Mat::ones(n, 1));
     let numerator = H_pp_solver.solve(&H_p);
 
-    let c = denominator.sum() / numerator.sum();
+    let c = numerator.sum() / denominator.sum();
     let delta = numerator - c * &denominator;
 
     let lambda_alpha_sq = (delta.transpose() * &H_pp * &delta)[(0, 0)];
@@ -119,6 +124,11 @@ fn solve_newton_system(
 pub fn solve(problem: &Problem, max_iter: usize, verbose: bool) -> Result<SolveResult, SolveError> {
     let n = problem.f_samples.nrows();
     let mut alpha = (1.0 / n as f64) * Mat::<f64>::ones(n, 1);
+
+    if verbose {
+        println!(" it |   cost   | lambda d | step size ");
+        println!("----|----------|----------|----------");
+    }
 
     let mut converged = false;
     let mut status = String::new();
@@ -145,7 +155,7 @@ pub fn solve(problem: &Problem, max_iter: usize, verbose: bool) -> Result<SolveR
         }
 
         if verbose {
-            unimplemented!("need to compute and print iteration info");
+            println!("{iter:>3} | {cost:+.3e} | {lambda_alpha_sq:+.3e} | {stepsize:+.3e}");
         }
     }
 

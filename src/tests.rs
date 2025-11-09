@@ -1,6 +1,6 @@
 use crate::problem::Kernel;
 use crate::problem::Problem;
-use crate::solver::{h_prime, h_pprime, solve_newton_system, solve};
+use crate::solver::{h_pprime, h_prime, solve, solve_newton_system};
 use approx::assert_relative_eq;
 use faer::prelude::*;
 
@@ -27,7 +27,7 @@ fn h_prime_polynomial() {
     let n = 2;
     let problem = build_polynomial_problem(n);
     let alpha = Mat::<f64>::from_fn(n, 1, |i, _| (i + 1) as f64);
-    let c = Mat::<f64>::from_fn(n, n, |i, j| if i == j { 1.0} else { 0.5 });
+    let c = Mat::<f64>::from_fn(n, n, |i, j| if i == j { 1.0 } else { 0.5 });
 
     let h_p = h_prime(&problem, &alpha, &c.as_ref());
     let expected = mat![[44.95], [17.1625]];
@@ -40,7 +40,7 @@ fn h_pprime_polynomial() {
     let n = 2;
     let problem = build_polynomial_problem(n);
     let alpha = Mat::<f64>::from_fn(n, 1, |i, _| (i + 1) as f64);
-    let c = Mat::<f64>::from_fn(n, n, |i, j| if i == j { 1.0} else { 0.5 });
+    let c = Mat::<f64>::from_fn(n, n, |i, j| if i == j { 1.0 } else { 0.5 });
 
     let h_pp = h_pprime(&problem, &alpha, &c.as_ref());
     let expected = mat![[0.05, 0.00625], [0.00625, 0.0125]];

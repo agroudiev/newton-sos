@@ -55,8 +55,6 @@ pub struct Problem {
     pub(crate) phi: Option<Mat<f64>>,
     /// Kernel matrix `K`
     pub(crate) K: Option<Mat<f64>>,
-    /// LLT decomposition of the kernel matrix `K`
-    pub(crate) K_llt: Option<Llt<f64>>,
 }
 
 impl Problem {
@@ -114,7 +112,6 @@ impl Problem {
             f_samples,
             phi: None,
             K: None,
-            K_llt: None,
         })
     }
 
@@ -172,7 +169,6 @@ impl Problem {
 
         self.K = Some(kernel_matrix);
         self.phi = Some(r.transpose().to_owned());
-        self.K_llt = Some(llt);
 
         Ok(())
     }

@@ -1,6 +1,70 @@
+use faer_ext::IntoNdarray;
+use numpy::{PyArray2, ndarray};
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 
-#[pyfunction(name = "solve")]
-pub fn py_solve() -> PyResult<()> {
-    unimplemented!()
+use crate::py_problem::PyProblem;
+use crate::solver::SystemSolveMethod;
+use crate::solver::{SolveResult, solve};
+
+#[pyclass(name = "SolveResult")]
+pub struct PySolveResult {
+    pub inner: SolveResult,
+}
+
+#[pymethods]
+impl PySolveResult {
+    #[getter]
+    pub fn z_hat<'py>(&self, py: Python<'py>) -> Option<Py<PyArray2<f64>>> {
+        match &self.inner.z_hat {
+            Some(mat) => {
+                let ndarray = mat.as_ref().into_ndarray();
+                let array = PyArray2::from_array(
+                    py,
+                    &ndarray.into_dimensionality::<ndarray::Ix2>().unwrap(),
+                );
+                Some(array.into())
+            }
+            None => None,
+        }
+    }
+
+    #[getter]
+    pub fn iterations(&self) -> usize {
+        self.inner.iterations
+    }
+
+    #[getter]
+    pub fn converged(&self) -> bool {
+        self.inner.converged
+    }
+
+    #[getter]
+    pub fn status(&self) -> String {
+        self.inner.status.clone()
+    }
+}
+
+#[pyfunction(name = "solve", signature = (problem, max_iter=100, verbose=false, method="partial_piv_lu"))]
+pub fn py_solve(
+    problem: &PyProblem,
+    max_iter: usize,
+    verbose: bool,
+    method: &str,
+) -> PyResult<PySolveResult> {
+    let method = match method {
+        "llt" => SystemSolveMethod::Llt,
+        "partial_piv_lu" => SystemSolveMethod::PartialPivLu,
+        "full_piv_lu" => SystemSolveMethod::FullPivLu,
+        _ => {
+            return Err(PyErr::new::<PyRuntimeError, _>(format!(
+                "Unsupported method: {}. Supported methods are 'llt', 'partial_piv_lu', and 'full_piv_lu'.",
+                method
+            )));
+        }
+    };
+
+    let result = solve(&problem.inner, max_iter, verbose, Some(method))
+        .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("{:#?}", e)))?;
+    Ok(PySolveResult { inner: result })
 }

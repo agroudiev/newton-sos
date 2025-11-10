@@ -12,7 +12,7 @@ pub struct PyProblem {
 #[pymethods]
 impl PyProblem {
     #[new]
-    pub fn new(
+    fn new(
         lambda: f64,
         t: f64,
         x_samples: PyReadonlyArrayDyn<f64>,
@@ -43,7 +43,7 @@ impl PyProblem {
     }
 
     #[pyo3(signature = (kernel, sigma))]
-    pub fn initialize_native_kernel(&mut self, kernel: String, sigma: f64) -> PyResult<()> {
+    fn initialize_native_kernel(&mut self, kernel: String, sigma: f64) -> PyResult<()> {
         let kernel = match kernel.as_str() {
             "gaussian" => Kernel::Gaussian(sigma),
             "laplacian" => Kernel::Laplacian(sigma),

@@ -1,14 +1,18 @@
+#[cfg(feature = "python")]
 use pyo3::prelude::*;
 
 pub mod problem;
 pub mod solver;
 
+#[cfg(feature = "python")]
 mod py_problem;
+#[cfg(feature = "python")]
 mod py_solver;
 
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "python")]
 #[pymodule]
 fn newton_sos(newton_sos: &Bound<'_, PyModule>) -> PyResult<()> {
     newton_sos.add_class::<py_problem::PyProblem>()?;

@@ -59,4 +59,5 @@ plt2.set(
     ylabel="Time Ratio (Python / Rust)",
     title="1D Sinusoid",
 )
+plt2.legend().remove()
 plt2.figure.savefig(f"benchmark/plots/{filename}_ratio.pdf", bbox_inches="tight")

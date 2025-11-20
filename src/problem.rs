@@ -157,14 +157,14 @@ impl Problem {
         // Compute the kernel matrix using the defined kernel function
         let kernel_matrix = Mat::<f64>::from_fn(n_samples, n_samples, kernel_function);
         // Compute the features matrix
-        let llt = kernel_matrix
+        /*let llt = kernel_matrix
             .llt(Side::Lower)
             .map_err(ProblemError::FaerLltError)?;
-        let r = llt.L();
+        let r = llt.L();*/
         // TODO: implement other decompositions (LDLT, ...)
 
         self.K = Some(kernel_matrix);
-        self.phi = Some(r.transpose().to_owned());
+        /* self.phi = Some(r.transpose().to_owned()); */
 
         Ok(())
     }

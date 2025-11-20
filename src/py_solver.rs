@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 
 use crate::py_problem::PyProblem;
 use crate::solver::SystemSolveMethod;
-use crate::solver::{SolveResult, solve};
+use crate::solver::{SolveResult, solve, solve_parallel};
 
 #[pyclass(name = "SolveResult")]
 pub struct PySolveResult {
@@ -67,4 +67,35 @@ pub fn py_solve(
     let result = solve(&problem.inner, max_iter, verbose, Some(method))
         .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("{:#?}", e)))?;
     Ok(PySolveResult { inner: result })
+}
+
+#[pyfunction(name = "solve_parallel", signature = (problems, max_iter=100, verbose=false, method="partial_piv_lu"))]
+pub fn py_solve_parallel(
+    problems: Vec<Py<PyProblem>>,
+    max_iter: usize,
+    verbose: bool,
+    method: &str,
+) -> PyResult<Vec<PySolveResult>> {
+    let method = match method {
+        "llt" => SystemSolveMethod::Llt,
+        "partial_piv_lu" => SystemSolveMethod::PartialPivLu,
+        "full_piv_lu" => SystemSolveMethod::FullPivLu,
+        _ => {
+            return Err(PyErr::new::<PyRuntimeError, _>(format!(
+                "Unsupported method: {}. Supported methods are 'llt', 'partial_piv_lu', and 'full_piv_lu'.",
+                method
+            )));
+        }
+    };
+
+    let problems: Vec<crate::problem::Problem> = problems
+        .into_iter()
+        .map(|py_problem| Python::attach(|py| py_problem.borrow(py).inner.clone()))
+        .collect();
+    let result = solve_parallel(&problems, max_iter, verbose, Some(method))
+        .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("{:#?}", e)))?;
+    Ok(result
+        .into_iter()
+        .map(|inner| PySolveResult { inner })
+        .collect())
 }

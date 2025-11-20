@@ -1,6 +1,17 @@
 import unittest
-from newton_sos import Problem, solve
+from newton_sos import Problem, solve, solve_parallel
 import numpy as np
+
+
+def create_polynomial_problem(n):
+    def polynomial(x):
+        return x**4 - 3 * x**3 + 2 * x**2 + x - 1
+
+    x_samples = np.array([[-2 + i * 0.5] for i in range(n)], dtype=np.float64)
+    f_samples = np.array([[polynomial(x[0])] for x in x_samples], dtype=np.float64)
+    problem = Problem(0.01, 0.1 / n, x_samples, f_samples)
+    problem.initialize_native_kernel("laplacian", 0.1)
+    return problem
 
 
 class TestPyProblem(unittest.TestCase):
@@ -43,15 +54,7 @@ class TestPyProblem(unittest.TestCase):
         self.assertEqual(solve_result.status, "Converged in Newton decrement")
 
     def test_solve_polynomial(self):
-        n = 10
-
-        def polynomial(x):
-            return x**4 - 3 * x**3 + 2 * x**2 + x - 1
-
-        x_samples = np.array([[-2 + i * 0.5] for i in range(n)], dtype=np.float64)
-        f_samples = np.array([[polynomial(x[0])] for x in x_samples], dtype=np.float64)
-        problem = Problem(0.01, 0.1 / n, x_samples, f_samples)
-        problem.initialize_native_kernel("laplacian", 0.1)
+        problem = create_polynomial_problem(10)
 
         solve_result = solve(
             problem, max_iter=100, verbose=False, method="partial_piv_lu"
@@ -60,6 +63,32 @@ class TestPyProblem(unittest.TestCase):
         self.assertEqual(solve_result.iterations, 10)
         self.assertEqual(solve_result.status, "Converged in Newton decrement")
         self.assertAlmostEqual(solve_result.z_hat[0, 0], 0.01939745, places=7)
+
+    def test_solve_single_polynomial(self):
+        problem = create_polynomial_problem(10)
+
+        solve_results = solve_parallel(
+            [problem], max_iter=100, verbose=False, method="partial_piv_lu"
+        )
+        self.assertTrue(solve_results[0].converged)
+        self.assertEqual(solve_results[0].iterations, 10)
+        self.assertEqual(solve_results[0].status, "Converged in Newton decrement")
+        self.assertAlmostEqual(solve_results[0].z_hat[0, 0], 0.01939745, places=7)
+
+    def test_solve_multiple_polynomial(self):
+        problem = create_polynomial_problem(10)
+
+        solve_results = solve_parallel(
+            [problem for _ in range(5)],
+            max_iter=100,
+            verbose=False,
+            method="partial_piv_lu",
+        )
+        for solve_result in solve_results:
+            self.assertTrue(solve_result.converged)
+            self.assertEqual(solve_result.iterations, 10)
+            self.assertEqual(solve_result.status, "Converged in Newton decrement")
+            self.assertAlmostEqual(solve_result.z_hat[0, 0], 0.01939745, places=7)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 use crate::problem::Kernel;
 use crate::problem::Problem;
 use crate::solver::SystemSolveMethod;
-use crate::solver::{h_pprime, h_prime, solve, solve_newton_system};
+use crate::solver::{h_pprime, h_prime, solve, solve_newton_system, solve_parallel};
 use approx::assert_relative_eq;
 use faer::prelude::*;
 
@@ -92,4 +92,42 @@ fn solve_polynomial() {
     assert!(solution.converged);
     assert_eq!(solution.iterations, 10);
     assert_relative_eq!(solution.z_hat.unwrap()[(0, 0)], 0.01939745, epsilon = 1e-7);
+}
+
+#[test]
+fn solve_parallel_single_polynomial() {
+    let problem = build_polynomial_problem(10);
+
+    let result = solve_parallel(&[problem], 100, true, None);
+    assert!(result.is_ok());
+
+    let solutions = result.unwrap();
+    let solution = &solutions[0];
+    assert!(solution.converged);
+    assert_eq!(solution.iterations, 10);
+    assert_relative_eq!(
+        solution.z_hat.as_ref().unwrap()[(0, 0)],
+        0.01939745,
+        epsilon = 1e-7
+    );
+}
+
+#[test]
+fn solve_parallel_multiple_polynomial() {
+    let problem = build_polynomial_problem(10);
+    let problems = [problem.clone(), problem.clone(), problem.clone()];
+
+    let result = solve_parallel(&problems, 100, true, None);
+    assert!(result.is_ok());
+
+    let solutions = result.unwrap();
+    for solution in solutions {
+        assert!(solution.converged);
+        assert_eq!(solution.iterations, 10);
+        assert_relative_eq!(
+            solution.z_hat.as_ref().unwrap()[(0, 0)],
+            0.01939745,
+            epsilon = 1e-7
+        );
+    }
 }

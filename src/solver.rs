@@ -1,5 +1,6 @@
 use crate::problem::Problem;
 use faer::{Side, linalg::solvers::LltError, prelude::*};
+use rayon::prelude::*;
 use std::f64;
 
 #[derive(Debug)]
@@ -207,4 +208,17 @@ pub fn solve(
         };
         Ok(SolveResult::new_failed(final_iter, status))
     }
+}
+
+/// Solves multiple optimization problems in parallel using the damped Newton method.
+pub fn solve_parallel(
+    problems: &[Problem],
+    max_iter: usize,
+    verbose: bool,
+    method: Option<SystemSolveMethod>,
+) -> Result<Vec<SolveResult>, SolveError> {
+    problems
+        .par_iter()
+        .map(|problem| solve(problem, max_iter, verbose, method))
+        .collect()
 }

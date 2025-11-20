@@ -708,6 +708,7 @@ dependencies = [
  "faer-ext",
  "numpy",
  "pyo3",
+ "rayon",
 ]
 
 [[package]]

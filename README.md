@@ -32,6 +32,7 @@ let problem = Problem::new( ... ); // Define the problem
 problem.initialize_native_kernel( ... ); // Compute the kernel matrix
 let result = solve(problem, ... ); // Solve the optimization problem
 ```
+Another function called `solve_parallel` is also provided to solve multiple problems in parallel.
 
 ### Python
 An example is provided in `examples/polynomial.py`. To run it, use:

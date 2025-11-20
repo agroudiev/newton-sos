@@ -1,7 +1,7 @@
 //! Defines the optimization problem structure, as well as methods for computing
 //! the features matrix and kernel matrix.
 
-use faer::{Side, linalg::solvers::LltError, prelude::*};
+use faer::{linalg::solvers::LltError, prelude::*};
 
 #[derive(Debug, Clone, Copy)]
 /// Enum representing the natively supported kernel types.

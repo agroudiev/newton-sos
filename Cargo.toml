@@ -9,7 +9,7 @@ description = "Damped Newton method to solve low-rank problems arising from Kern
 homepage = "https://github.com/agroudiev/newton-sos"
 repository = "https://github.com/agroudiev/newton-sos"
 keywords = ["optimization", "kernel-sos", "sum-of-squares", "solver", "damped-newton"]
-categories = ["numerical-methods", "optimization", "scientific-computing"]
+categories = ["science", "mathematics", "science::robotics"]
 
 exclude = [
     ".github/*",

@@ -131,3 +131,24 @@ fn solve_parallel_multiple_polynomial() {
         );
     }
 }
+
+#[test]
+fn retrieve_b() {
+    let mut problem = build_polynomial_problem(10);
+    problem.compute_phi().unwrap();
+
+    let result = solve(&problem, 100, true, None);
+    assert!(result.is_ok());
+
+    let solution = result.unwrap();
+    assert!(solution.converged);
+    assert_eq!(solution.iterations, 10);
+    assert_relative_eq!(
+        solution.z_hat.as_ref().unwrap()[(0, 0)],
+        0.01939745,
+        epsilon = 1e-7
+    );
+
+    let b = solution.get_B(&problem);
+    assert!(b.is_ok());
+}

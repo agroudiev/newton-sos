@@ -1,7 +1,7 @@
 //! Defines the optimization problem structure, as well as methods for computing
 //! the features matrix and kernel matrix.
 
-use faer::{linalg::solvers::LltError, prelude::*};
+use faer::{Side, linalg::solvers::LltError, prelude::*};
 
 #[derive(Debug, Clone, Copy)]
 /// Enum representing the natively supported kernel types.
@@ -28,6 +28,7 @@ pub enum ProblemError {
     InvalidParameter(String),
     KernelAlreadyInitialized,
     FaerLltError(LltError),
+    KernelNotInitialized,
 }
 
 #[allow(non_snake_case)]
@@ -156,15 +157,28 @@ impl Problem {
 
         // Compute the kernel matrix using the defined kernel function
         let kernel_matrix = Mat::<f64>::from_fn(n_samples, n_samples, kernel_function);
-        // Compute the features matrix
-        /*let llt = kernel_matrix
-            .llt(Side::Lower)
-            .map_err(ProblemError::FaerLltError)?;
-        let r = llt.L();*/
-        // TODO: implement other decompositions (LDLT, ...)
 
         self.K = Some(kernel_matrix);
-        /* self.phi = Some(r.transpose().to_owned()); */
+
+        Ok(())
+    }
+
+    /// Computes the features matrix `phi` from the kernel matrix `K` using Cholesky decomposition.
+    #[allow(non_snake_case)]
+    pub fn compute_phi(&mut self) -> Result<(), ProblemError> {
+        // If phi is already computed, return early
+        if self.phi.is_some() {
+            return Ok(());
+        }
+
+        let K = match &self.K {
+            Some(K) => K,
+            None => return Err(ProblemError::KernelNotInitialized),
+        };
+        let llt = K.llt(Side::Lower).map_err(ProblemError::FaerLltError)?;
+        let r = llt.L();
+        self.phi = Some(r.transpose().to_owned());
+        // TODO: implement other decompositions (LDLT, ...)
 
         Ok(())
     }

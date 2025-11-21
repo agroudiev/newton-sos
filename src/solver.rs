@@ -1,4 +1,4 @@
-use crate::problem::Problem;
+use crate::problem::{Problem, ProblemError};
 use faer::{Side, linalg::solvers::LltError, prelude::*};
 use rayon::prelude::*;
 use std::f64;
@@ -15,10 +15,6 @@ pub struct SolveResult {
     pub alpha: Option<Mat<f64>>,
     /// Number of iterations taken to converge
     pub iterations: usize,
-    /// Optimal `B` matrix
-    pub B: Option<Mat<f64>>,
-    /// Optimal `X` matrix (also called `M`)
-    pub X: Option<Mat<f64>>,
     /// Whether the solver converged successfully
     pub converged: bool,
     /// Status message from the solver
@@ -27,14 +23,12 @@ pub struct SolveResult {
 
 impl SolveResult {
     /// Creates a new `SolveResult` instance for a failed solve.
-    pub fn new_failed(iterations: usize, status: String) -> Self {
+    fn new_failed(iterations: usize, status: String) -> Self {
         SolveResult {
             z_hat: None,
             cost: None,
             alpha: None,
             iterations,
-            B: None,
-            X: None,
             converged: false,
             status,
         }
@@ -53,18 +47,51 @@ impl SolveResult {
             cost: Some(cost),
             alpha: Some(alpha),
             iterations,
-            B: None,
-            X: None,
             converged: true,
             status,
         }
+    }
+
+    #[allow(non_snake_case)]
+    /// Computes the optimal B matrix
+    pub fn get_B(&self, problem: &Problem) -> Result<Mat<f64>, SolveError> {
+        let K = match &problem.K {
+            Some(K) => K,
+            None => return Err(SolveError::ProblemNotInitialized),
+        };
+        let mut K_tilde = K.to_owned();
+        let n = K.nrows();
+        let phi = problem.phi.as_ref().ok_or(SolveError::PhiNotComputed)?;
+
+        let alpha = match &self.alpha {
+            Some(alpha) => alpha,
+            None => return Err(SolveError::ConvergenceFailed),
+        };
+
+        // compute K + lambda * Diag(alpha)^-1
+        for i in 0..n {
+            K_tilde[(i, i)] += problem.lambda / alpha[(i, 0)];
+        }
+
+        // find the least squares solution of (K + lambda * Diag(alpha)^-1) X = phi^T
+        let qr = K_tilde.qr();
+        let rhs = qr.solve_lstsq(&phi.transpose());
+
+        // compute B = (t / lambda) * (I - phi * K_tilde^-1 * phi)
+        Ok(problem.t / problem.lambda * (Mat::<f64>::identity(n, n) - phi * rhs))
     }
 }
 
 #[derive(Debug)]
 pub enum SolveError {
+    /// Called when trying to solve a problem that has not been initialized
     ProblemNotInitialized,
+    /// Error during LLT decomposition
     LltError(LltError),
+    /// Called when trying to retrieve B on after a non-converged solve
+    ConvergenceFailed,
+    /// Called when trying to retrieve B but Phi has not been computed
+    PhiNotComputed,
 }
 
 pub(crate) fn h_prime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {

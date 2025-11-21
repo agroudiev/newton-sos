@@ -1,3 +1,13 @@
+//! Defines the main solver algorithms for the optimization problem.
+//!
+//! Formally, we want to solve the following optimization problem:
+//! ```math
+//! max c - lambda * Tr(B) + t log det (B)
+//!     s.t. f_i - Phi_i^T B Phi_i >= c, i=1,...,N
+//!          B >= 0
+//! ```
+//! The solver uses a damped Newton method to iteratively find the optimal dual variables `alpha`.
+
 use crate::problem::Problem;
 use faer::{Side, linalg::solvers::LltError, prelude::*};
 use rayon::prelude::*;
@@ -82,6 +92,7 @@ impl SolveResult {
     }
 }
 
+/// Errors that can occur during the solving process
 pub enum SolveError {
     /// Called when trying to solve a problem that has not been initialized
     ProblemNotInitialized,

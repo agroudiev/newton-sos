@@ -26,9 +26,13 @@ pub enum Kernel {
 
 /// Represents errors that can occur during problem setup and initialization if the `Problem` struct.
 pub enum ProblemError {
+    /// Indicates that an invalid parameter was provided.
     InvalidParameter(String),
+    /// Indicates that the kernel matrix has already been initialized.
     KernelAlreadyInitialized,
+    /// Wraps a faer LLT decomposition error.
     FaerLltError(LltError),
+    /// Raised when Phi is requested before K has been initialized.
     KernelNotInitialized,
 }
 
@@ -52,10 +56,12 @@ impl Debug for ProblemError {
 #[derive(Debug, Clone)]
 /// Represents an instance of the following optimization problem:
 /// ```math
-/// max c - lambda * trace(B) + t log det (B)
+/// max c - lambda * Tr(B) + t log det (B)
 ///     s.t. f_i - Phi_i^T B Phi_i >= c, i=1,...,N
 ///          B >= 0
 /// ```
+/// where `Phi` is the features matrix derived from the kernel matrix `K`.
+/// In practice, `K` only is computed first, and `Phi` is optionally computed later.
 pub struct Problem {
     /// Trace penalty
     pub(crate) lambda: f64,
@@ -79,8 +85,11 @@ impl Problem {
     /// # Arguments
     /// * `lambda` - Trace penalty parameter.
     /// * `t` - Relative precision parameter.
-    /// * `x_samples` - Sample points matrix.
-    /// * `f_samples` - Function values at the sample points.
+    /// * `x_samples` - Sample points matrix of shape (n, d).
+    /// * `f_samples` - Function values at the sample points of shape (n, 1).
+    ///
+    /// **Note**: this function does not compute the kernel matrix `K` or the features matrix `Phi`.
+    /// To compute them, please call `initialize_native_kernel` and `compute_phi` respectively.
     pub fn new(
         lambda: f64,
         t: f64,

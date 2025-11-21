@@ -1,6 +1,8 @@
 //! Defines the optimization problem structure, as well as methods for computing
 //! the features matrix and kernel matrix.
 
+use std::fmt::Debug;
+
 use faer::{Side, linalg::solvers::LltError, prelude::*};
 
 #[derive(Debug, Clone, Copy)]
@@ -22,13 +24,28 @@ pub enum Kernel {
     Gaussian(f64),
 }
 
-#[derive(Debug)]
 /// Represents errors that can occur during problem setup and initialization if the `Problem` struct.
 pub enum ProblemError {
     InvalidParameter(String),
     KernelAlreadyInitialized,
     FaerLltError(LltError),
     KernelNotInitialized,
+}
+
+impl Debug for ProblemError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ProblemError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
+            ProblemError::KernelAlreadyInitialized => {
+                write!(f, "Kernel has already been initialized")
+            }
+            ProblemError::FaerLltError(e) => write!(f, "LLT decomposition error: {:?}", e),
+            ProblemError::KernelNotInitialized => write!(
+                f,
+                "Kernel matrix not initialized. Please call Problem::initialize_native_kernel before Problem::compute_phi."
+            ),
+        }
+    }
 }
 
 #[allow(non_snake_case)]

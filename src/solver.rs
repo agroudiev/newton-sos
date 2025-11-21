@@ -1,7 +1,7 @@
-use crate::problem::{Problem, ProblemError};
+use crate::problem::Problem;
 use faer::{Side, linalg::solvers::LltError, prelude::*};
 use rayon::prelude::*;
-use std::f64;
+use std::{f64, fmt::Debug};
 
 #[derive(Debug)]
 #[allow(non_snake_case)]
@@ -82,7 +82,6 @@ impl SolveResult {
     }
 }
 
-#[derive(Debug)]
 pub enum SolveError {
     /// Called when trying to solve a problem that has not been initialized
     ProblemNotInitialized,
@@ -92,6 +91,26 @@ pub enum SolveError {
     ConvergenceFailed,
     /// Called when trying to retrieve B but Phi has not been computed
     PhiNotComputed,
+}
+
+impl Debug for SolveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SolveError::ProblemNotInitialized => write!(
+                f,
+                "Problem not initialized: please call Problem::initialize_native_kernel before solving."
+            ),
+            SolveError::LltError(e) => write!(f, "LLT decomposition error: {:?}.", e),
+            SolveError::ConvergenceFailed => write!(
+                f,
+                "Cannot retrieve B: solve did not converge, so no alpha are available."
+            ),
+            SolveError::PhiNotComputed => write!(
+                f,
+                "Cannot retrieve B: the Phi matrix was not computed. Please call Problem::compute_phi before calling get_B."
+            ),
+        }
+    }
 }
 
 pub(crate) fn h_prime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {

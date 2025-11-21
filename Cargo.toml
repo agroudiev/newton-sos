@@ -11,6 +11,12 @@ repository = "https://github.com/agroudiev/newton-sos"
 keywords = ["optimization", "numerical-methods", "sos", "sum-of-squares", "kernel-methods", "newton-method", "low-rank"]
 categories = ["numerical-methods", "optimization", "scientific-computing"]
 
+exclude = [
+    ".github/*",
+    "benchmark/*",
+    ".pre-commit-config.yaml",
+]
+
 [lib]
 name = "newton_sos"
 crate-type = ["cdylib", "rlib"]

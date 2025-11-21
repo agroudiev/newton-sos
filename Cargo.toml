@@ -8,7 +8,7 @@ authors = ["Antoine Groudiev <antoine.groudiev@ens.psl.eu>"]
 description = "Damped Newton method to solve low-rank problems arising from KernelSOS and Sum-of-Squares relaxations."
 homepage = "https://github.com/agroudiev/newton-sos"
 repository = "https://github.com/agroudiev/newton-sos"
-keywords = ["optimization", "numerical-methods", "sos", "sum-of-squares", "kernel-methods", "newton-method", "low-rank"]
+keywords = ["optimization", "kernel-sos", "sum-of-squares", "solver", "damped-newton"]
 categories = ["numerical-methods", "optimization", "scientific-computing"]
 
 exclude = [

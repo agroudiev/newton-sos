@@ -1,5 +1,10 @@
 use std::process::Command;
 pub fn main() {
+    // Skip this build script when building documentation on docs.rs
+    if std::env::var("DOCS_RS").is_ok() {
+        return;
+    }
+
     // Install setuptools
     let output = Command::new("pip")
         .arg("install")

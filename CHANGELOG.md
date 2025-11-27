@@ -2,7 +2,7 @@
 
 This file is used to track changes made to the project over time.
 
-## [0.1.1] - 2025-12-27
+## [0.2.0] - 2025-12-27
 ### Added
 - Python bindings for the following methods and attributes:
   - `problem::Problem::compute_Phi`

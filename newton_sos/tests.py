@@ -18,19 +18,32 @@ class TestPyProblem(unittest.TestCase):
     def test_new(self):
         x_samples = np.array([[i] for i in range(10)], dtype=np.float64)
         f_samples = np.array([[i] for i in range(10)], dtype=np.float64)
-        _ = Problem(0.1, 0.1 / 10, x_samples, f_samples)
+        problem = Problem(0.1, 0.1 / 10, x_samples, f_samples)
+        self.assertTrue(problem.K is None)
 
     def test_initialize_gaussian(self):
         x_samples = np.array([[i] for i in range(10)], dtype=np.float64)
         f_samples = np.array([[i] for i in range(10)], dtype=np.float64)
         problem = Problem(0.1, 0.1 / 10, x_samples, f_samples)
         problem.initialize_native_kernel("gaussian", 1.0)
+        self.assertTrue(problem.K is not None)
 
     def test_initialize_laplacian(self):
         x_samples = np.array([[i] for i in range(10)], dtype=np.float64)
         f_samples = np.array([[i] for i in range(10)], dtype=np.float64)
         problem = Problem(0.1, 0.1 / 10, x_samples, f_samples)
         problem.initialize_native_kernel("laplacian", 1.0)
+        self.assertFalse(problem.K is None)
+
+    def test_K_phi(self):
+        x_samples = np.array([[i] for i in range(10)], dtype=np.float64)
+        f_samples = np.array([[i] for i in range(10)], dtype=np.float64)
+        problem = Problem(0.1, 0.1 / 10, x_samples, f_samples)
+        problem.initialize_native_kernel("laplacian", 1.0)
+        self.assertFalse(problem.K is None)
+        self.assertTrue(problem.phi is None)
+        problem.compute_phi()
+        self.assertFalse(problem.phi is None)
 
     def test_initialize_unsupported_kernel(self):
         x_samples = np.array([[i] for i in range(10)], dtype=np.float64)

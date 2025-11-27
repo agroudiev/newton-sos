@@ -138,7 +138,7 @@ impl Problem {
         })
     }
 
-    /// Initializes the kernel matrix `K` and features matrix `phi` using the specified native kernel.
+    /// Initializes the kernel matrix `K` using the specified native kernel.
     ///
     /// This method computes the kernel matrix based on the provided kernel type and its parameters,
     /// and then derives the features matrix from the Cholesky decomposition of the kernel matrix.
@@ -190,6 +190,8 @@ impl Problem {
     }
 
     /// Computes the features matrix `phi` from the kernel matrix `K` using Cholesky decomposition.
+    ///
+    /// This function must be called after `initialize_native_kernel`.
     #[allow(non_snake_case)]
     pub fn compute_phi(&mut self) -> Result<(), ProblemError> {
         // If phi is already computed, return early

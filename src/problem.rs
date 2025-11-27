@@ -4,6 +4,7 @@
 use std::fmt::Debug;
 
 use faer::{Side, linalg::solvers::LltError, prelude::*};
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 /// Enum representing the natively supported kernel types.
@@ -169,20 +170,33 @@ impl Problem {
         let n_samples = self.x_samples.nrows();
         let x_samples = &self.x_samples;
 
-        // Define the kernel function based on the selected kernel type
-        let kernel_function: Box<dyn Fn(usize, usize) -> f64> = match kernel {
-            Kernel::Laplacian(sigma) => Box::new(move |i: usize, j: usize| {
-                let diff = x_samples.row(i) - x_samples.row(j);
-                (-diff.norm_l2() / sigma).exp()
-            }),
-            Kernel::Gaussian(sigma) => Box::new(move |i: usize, j: usize| {
-                let diff = x_samples.row(i) - x_samples.row(j);
-                (-diff.norm_l2().powi(2) / (2.0 * sigma.powi(2))).exp()
-            }),
-        };
+        // Compute the kernel matrix using the selected kernel type
+        let mut kernel_matrix = Mat::<f64>::zeros(n_samples, n_samples);
 
-        // Compute the kernel matrix using the defined kernel function
-        let kernel_matrix = Mat::<f64>::from_fn(n_samples, n_samples, kernel_function);
+        match kernel {
+            Kernel::Laplacian(sigma) => {
+                kernel_matrix
+                    .par_col_iter_mut()
+                    .enumerate()
+                    .for_each(|(j, col)| {
+                        col.par_iter_mut().enumerate().for_each(|(i, val)| {
+                            let diff = x_samples.row(i) - x_samples.row(j);
+                            *val = (-diff.norm_l2() / sigma).exp();
+                        });
+                    });
+            }
+            Kernel::Gaussian(sigma) => {
+                kernel_matrix
+                    .par_col_iter_mut()
+                    .enumerate()
+                    .for_each(|(j, col)| {
+                        col.par_iter_mut().enumerate().for_each(|(i, val)| {
+                            let diff = x_samples.row(i) - x_samples.row(j);
+                            *val = (-diff.norm_l2().powi(2) / (2.0 * sigma.powi(2))).exp();
+                        });
+                    });
+            }
+        }
 
         self.K = Some(kernel_matrix);
 

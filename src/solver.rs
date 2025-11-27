@@ -125,19 +125,23 @@ impl Debug for SolveError {
 }
 
 pub(crate) fn h_prime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {
-    // FIXME: optimize
     let n = problem.f_samples.nrows();
-    Mat::<f64>::from_fn(n, 1, |i, _| {
-        problem.f_samples[(i, 0)] - problem.t / alpha[(i, 0)] * c[(i, i)]
-    })
+    let mut mat = Mat::<f64>::zeros(n, 1);
+    mat.par_row_iter_mut().enumerate().for_each(|(i, mut col)| {
+        col[0] = problem.f_samples[(i, 0)] - problem.t / alpha[(i, 0)] * c[(i, i)];
+    });
+    mat
 }
 
 pub(crate) fn h_pprime(problem: &Problem, alpha: &Mat<f64>, c: &MatRef<f64>) -> Mat<f64> {
-    // FIXME: optimize
     let n = problem.f_samples.nrows();
-    Mat::<f64>::from_fn(n, n, |i, j| {
-        problem.t / (alpha[(i, 0)] * alpha[(j, 0)]) * c[(i, j)] * c[(j, i)]
-    })
+    let mut mat = Mat::<f64>::zeros(n, n);
+    mat.par_col_iter_mut().enumerate().for_each(|(i, col)| {
+        col.par_iter_mut().enumerate().for_each(|(j, val)| {
+            *val = problem.t / (alpha[(i, 0)] * alpha[(j, 0)]) * c[(i, j)] * c[(j, i)];
+        });
+    });
+    mat
 }
 
 /// Methods for solving the Newton system
@@ -242,6 +246,7 @@ pub fn solve(
     }
 
     if converged {
+        // FIXME: optimize
         let z_hat = Mat::<f64>::from_fn(problem.x_samples.ncols(), 1, |j, _| {
             (0..n)
                 .map(|i| alpha[(i, 0)] * problem.x_samples[(i, j)])

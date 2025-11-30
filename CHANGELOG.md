@@ -7,6 +7,9 @@ This file is used to track changes made to the project over time.
 - Binding for `SolveResult::cost`
 - Binding for `SolveResult::get_B`
 
+### Fixed
+- Skip build script for docs.rs builds
+
 ## [0.2.0] - 2025-12-27
 ### Added
 - Python bindings for the following methods and attributes:

@@ -43,6 +43,31 @@ impl PySolveResult {
     pub fn status(&self) -> String {
         self.inner.status.clone()
     }
+
+    #[getter]
+    pub fn cost(&self) -> Option<f64> {
+        self.inner.cost
+    }
+
+    #[pyo3(signature = (problem))]
+    #[allow(non_snake_case)]
+    pub fn get_B<'py>(
+        &self,
+        py: Python<'py>,
+        problem: &PyProblem,
+    ) -> PyResult<Option<Py<PyArray2<f64>>>> {
+        match self.inner.get_B(&problem.inner) {
+            Ok(mat) => {
+                let ndarray = mat.as_ref().into_ndarray();
+                let array = PyArray2::from_array(
+                    py,
+                    &ndarray.into_dimensionality::<ndarray::Ix2>().unwrap(),
+                );
+                Ok(Some(array.into()))
+            }
+            Err(_) => Ok(None),
+        }
+    }
 }
 
 #[pyfunction(name = "solve", signature = (problem, max_iter=100, verbose=false, method="partial_piv_lu"))]

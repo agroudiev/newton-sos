@@ -76,6 +76,9 @@ class TestPyProblem(unittest.TestCase):
         self.assertEqual(solve_result.iterations, 10)
         self.assertEqual(solve_result.status, "Converged in Newton decrement")
         self.assertAlmostEqual(solve_result.z_hat[0, 0], 0.01939745, places=7)
+        # TODO: check if the results are correct
+        solve_result.get_B(problem)  # Test get_B binding
+        solve_result.cost  # Test cost binding
 
     def test_solve_single_polynomial(self):
         problem = create_polynomial_problem(10)

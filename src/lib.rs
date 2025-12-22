@@ -1,9 +1,5 @@
 //! The `newton_sos` crate defines and solves optimization problems of the form:
-//! ```math
-//! max c - lambda * Tr(B) + t log det (B)
-//!     s.t. f_i - Phi_i^T B Phi_i >= c, i=1,...,N
-//!          B >= 0
-//! ```
+//! $$\max_{c\in\mathbb{R}, B \in \mathbb{S}^n_+} c - \lambda \text{Tr}(B) + t \log \det (B) \qquad \text{s.t. }\quad f_i - c = \Phi_i^T B \Phi_i, \\:\\:\forall i\in[\\![1, N]\\!]$$
 //! using a damped Newton method. Such problems arise from sum-of-squares optimization,
 //! especially in the Kernel Sum-of-Squares (KernelSOS) framework.
 //!

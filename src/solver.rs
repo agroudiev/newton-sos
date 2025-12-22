@@ -1,12 +1,8 @@
 //! Defines the main solver algorithms for the optimization problem.
 //!
 //! Formally, we want to solve the following optimization problem:
-//! ```math
-//! max c - lambda * Tr(B) + t log det (B)
-//!     s.t. f_i - Phi_i^T B Phi_i >= c, i=1,...,N
-//!          B >= 0
-//! ```
-//! The solver uses a damped Newton method to iteratively find the optimal dual variables `alpha`.
+//! $$\max_{c\in\mathbb{R}, B \in \mathbb{S}^n_+} c - \lambda \text{Tr}(B) + t \log \det (B) \qquad \text{s.t. }\quad f_i - c = \Phi_i^T B \Phi_i, \\:\\:\forall i\in[\\![1, N]\\!]$$
+//! The solver uses a damped Newton method to iteratively find the optimal dual variables $\alpha_i$.
 
 use crate::problem::Problem;
 use faer::{Side, linalg::solvers::LltError, prelude::*};
@@ -98,9 +94,9 @@ pub enum SolveError {
     ProblemNotInitialized,
     /// Error during LLT decomposition
     LltError(LltError),
-    /// Called when trying to retrieve B on after a non-converged solve
+    /// Called when trying to retrieve $B$ after a non-converged solve
     ConvergenceFailed,
-    /// Called when trying to retrieve B but Phi has not been computed
+    /// Called when trying to retrieve $B$ but $\Phi$ has not been computed
     PhiNotComputed,
 }
 

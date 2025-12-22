@@ -10,14 +10,10 @@ use rayon::prelude::*;
 /// Enum representing the natively supported kernel types.
 ///
 /// The following kernels are supported:
-/// - Laplacian kernel with bandwidth parameter `sigma`, defined as:
-///   ```math
-///   k(x, y) = exp(-||x - y||_2 / sigma)
-///   ```
-/// - Gaussian kernel with bandwidth parameter `sigma`, defined as:
-///   ```math
-///   k(x, y) = exp(-||x - y||_2^2 / (2 * sigma^2))
-///   ```
+/// - Laplacian kernel with bandwidth parameter $\sigma$, defined as:
+///   $$k(x, y) = \exp\left(-\frac{||x - y||_2}{\sigma}\right)$$
+/// - Gaussian kernel with bandwidth parameter $\sigma$, defined as:
+///   $$k(x, y) = \exp\left(-\frac{||x - y||_2^2}{2 \sigma^2}\right)$$
 pub enum Kernel {
     /// Laplacian kernel with the specified bandwidth parameter.
     Laplacian(f64),
@@ -33,7 +29,7 @@ pub enum ProblemError {
     KernelAlreadyInitialized,
     /// Wraps a faer LLT decomposition error.
     FaerLltError(LltError),
-    /// Raised when Phi is requested before K has been initialized.
+    /// Raised when Phi is requested before $K$ has been initialized.
     KernelNotInitialized,
 }
 
@@ -55,33 +51,38 @@ impl Debug for ProblemError {
 
 #[allow(non_snake_case)]
 #[derive(Debug, Clone)]
-/// Represents an instance of the following optimization problem:
-/// ```math
-/// max c - lambda * Tr(B) + t log det (B)
-///     s.t. f_i - Phi_i^T B Phi_i >= c, i=1,...,N
-///          B >= 0
-/// ```
-/// where `Phi` is the features matrix derived from the kernel matrix `K`.
-/// In practice, `K` only is computed first, and `Phi` is optionally computed later.
+/// Represents an instance of the optimization problem.
+///
+/// The problem is defined as:
+/// $$\max_{c\in\mathbb{R}, B \in \mathbb{S}^n_+} c - \lambda \text{Tr}(B) + t \log \det (B) \qquad \text{s.t. }\quad f_i - c = \Phi_i^T B \Phi_i, \\:\\:\forall i\in[\\![1, N]\\!]$$
+/// where:
+/// - $\lambda$ is the trace penalty,
+/// - $t$ is the relative precision, with $t = \varepsilon / n$,
+/// - $x_i$ are the sample points,
+/// - $f_i$ are the function values at the sample points,
+/// - $\Phi$ is the features matrix derived from the kernel matrix $K$,
+/// - $K$ is the kernel matrix computed from the sample points using a specified kernel function.
+///
+/// In practice, $K$ only is computed first, and $\Phi$ is optionally computed later.
 pub struct Problem {
     /// Trace penalty
     pub(crate) lambda: f64,
-    /// Relative precision (`epsilon / n_samples`)
+    /// Relative precision ($\varepsilon / n$)
     pub(crate) t: f64,
     /// Sample points
     pub(crate) x_samples: Mat<f64>,
     /// Function values at the samples
     pub(crate) f_samples: Mat<f64>,
-    /// Features matrix (columns of the Cholesky factor `R` of the kernel matrix `K`)
+    /// Features matrix (columns of the Cholesky factor $R$ of the kernel matrix $K$)
     pub(crate) phi: Option<Mat<f64>>,
-    /// Kernel matrix `K`
+    /// Kernel matrix $K$
     pub(crate) K: Option<Mat<f64>>,
 }
 
 impl Problem {
     /// Creates a new problem instance from samples and parameters.
     ///
-    /// The features matrix `phi` and kernel matrix `K` are not computed at this stage.
+    /// The features matrix $\Phi$ and kernel matrix $K$ are not computed at this stage.
     ///
     /// # Arguments
     /// * `lambda` - Trace penalty parameter.
@@ -89,7 +90,7 @@ impl Problem {
     /// * `x_samples` - Sample points matrix of shape (n, d).
     /// * `f_samples` - Function values at the sample points of shape (n, 1).
     ///
-    /// **Note**: this function does not compute the kernel matrix `K` or the features matrix `Phi`.
+    /// **Note**: this function does not compute the kernel matrix $K$ or the features matrix $\Phi$.
     /// To compute them, please call `initialize_native_kernel` and `compute_phi` respectively.
     pub fn new(
         lambda: f64,
@@ -139,13 +140,13 @@ impl Problem {
         })
     }
 
-    /// Initializes the kernel matrix `K` using the specified native kernel.
+    /// Initializes the kernel matrix $K$ using the specified native kernel.
     ///
     /// This method computes the kernel matrix based on the provided kernel type and its parameters,
     /// and then derives the features matrix from the Cholesky decomposition of the kernel matrix.
     ///
     /// # Arguments
-    /// * `kernel` - The kernel type and its associated parameter.
+    /// * `kernel` - The kernel type and its associated parameter (see [`Kernel`] enum).
     ///
     /// # Errors
     /// Returns `ProblemError::KernelAlreadyInitialized` if the kernel has already been initialized.
@@ -203,7 +204,7 @@ impl Problem {
         Ok(())
     }
 
-    /// Computes the features matrix `phi` from the kernel matrix `K` using Cholesky decomposition.
+    /// Computes the features matrix $\Phi$ from the kernel matrix $K$ using Cholesky decomposition.
     ///
     /// This function must be called after `initialize_native_kernel`.
     #[allow(non_snake_case)]

@@ -2,6 +2,13 @@
 
 This file is used to track changes made to the project over time.
 
+## [0.2.2] - 2025-12-22
+### Added
+- LaTeX rendering in the documentation
+
+### Miscellaneous
+- Publish to PyPI on tag creation
+
 ## [0.2.1] - 2025-11-30
 ### Added
 - Binding for `SolveResult::cost`

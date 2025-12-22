@@ -1,3 +1,20 @@
+//! The `newton_sos` crate defines and solves optimization problems of the form:
+//! ```math
+//! max c - lambda * Tr(B) + t log det (B)
+//!     s.t. f_i - Phi_i^T B Phi_i >= c, i=1,...,N
+//!          B >= 0
+//! ```
+//! using a damped Newton method. Such problems arise from sum-of-squares optimization,
+//! especially in the Kernel Sum-of-Squares (KernelSOS) framework.
+//!
+//! ## Overview
+//! The main components of the crate are:
+//! - [`problem::Problem`]: A struct representing the optimization problem, including data and parameters.
+//! - [`solver::solve`]: A function to solve the optimization problem.
+//!
+//! ## Feature Flags
+//! - `python`: Enables Python bindings using PyO3.
+
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
 

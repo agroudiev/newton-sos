@@ -1,3 +1,5 @@
+//! Python bindings for the solver module.
+
 use faer_ext::IntoNdarray;
 use numpy::{PyArray2, ndarray};
 use pyo3::exceptions::PyRuntimeError;

@@ -1,3 +1,5 @@
+//! Python bindings for the Problem struct.
+
 use crate::problem::{Kernel, Problem};
 use faer_ext::{IntoFaer, IntoNdarray};
 use numpy::{PyArray2, PyReadonlyArrayDyn, ndarray};

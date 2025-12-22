@@ -47,3 +47,15 @@ problem = Problem( ... )  # Define the problem
 problem.initialize_native_kernel( ... )  # Compute the kernel matrix
 result = problem.solve( ... )  # Solve the optimization problem
 ```
+
+## Citing
+If you use this code in your research, please use the following citation:
+```bibtex
+@software{newton_sos,
+  author = {Groudiev, Antoine},
+  title = {{Newton-SOS}: Damped Newton method to solve low-rank problems arising from KernelSOS and Sum-of-Squares relaxations},
+  url = {https://github.com/agroudiev/newton-sos},
+  version = {0.2.2},
+  date = {2025-12-22},
+}
+```

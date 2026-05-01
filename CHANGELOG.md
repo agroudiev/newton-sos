@@ -2,7 +2,7 @@
 
 This file is used to track changes made to the project over time.
 
-## [Unreleased]
+## [0.2.3] - 2026-05-01
 ### Added
 - More permissive kernel names (e.g. "Gaussian" instead of "gaussian")
 - Export `alpha` in the Python bindings

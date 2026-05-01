@@ -2,6 +2,12 @@
 
 This file is used to track changes made to the project over time.
 
+## [Unreleased]
+### Added
+- More permissive kernel names (e.g. "Gaussian" instead of "gaussian")
+- Export `alpha` in the Python bindings
+- Allow users to pass 1-dimensional arrays to initialize problems in the Python bindings
+
 ## [0.2.2] - 2025-12-22
 ### Added
 - LaTeX rendering in the documentation

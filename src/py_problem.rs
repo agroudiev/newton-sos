@@ -30,17 +30,58 @@ impl PyProblem {
         f_samples: PyReadonlyArrayDyn<f64>,
     ) -> PyResult<Self> {
         let x_samples_array = x_samples.as_array();
-        let x_samples_mat = x_samples_array
-            .view()
-            .into_dimensionality::<ndarray::Ix2>()
-            .unwrap()
-            .into_faer();
+        let x_samples_2d = match x_samples_array.ndim() {
+            1 => x_samples_array
+                .insert_axis(ndarray::Axis(1))
+                .into_dimensionality::<ndarray::Ix2>()
+                .map_err(|_| {
+                    PyErr::new::<PyRuntimeError, _>(
+                        "x_samples must be either a 1D array of shape (n,) or a 2D array of shape (n, d).",
+                    )
+                })?
+                .to_owned(),
+            2 => x_samples_array
+                .into_dimensionality::<ndarray::Ix2>()
+                .map_err(|_| {
+                    PyErr::new::<PyRuntimeError, _>(
+                        "x_samples must be either a 1D array of shape (n,) or a 2D array of shape (n, d).",
+                    )
+                })?
+                .to_owned(),
+            _ => {
+                return Err(PyErr::new::<PyRuntimeError, _>(
+                    "x_samples must be either a 1D array of shape (n,) or a 2D array of shape (n, d).",
+                ));
+            }
+        };
+        let x_samples_mat = x_samples_2d.view().into_faer();
+
         let f_samples_array = f_samples.as_array();
-        let f_samples_mat = f_samples_array
-            .view()
-            .into_dimensionality::<ndarray::Ix2>()
-            .unwrap()
-            .into_faer();
+        let f_samples_2d = match f_samples_array.ndim() {
+            1 => f_samples_array
+                .insert_axis(ndarray::Axis(1))
+                .into_dimensionality::<ndarray::Ix2>()
+                .map_err(|_| {
+                    PyErr::new::<PyRuntimeError, _>(
+                        "f_samples must be either a 1D array of shape (n,) or a 2D array of shape (n, 1).",
+                    )
+                })?
+                .to_owned(),
+            2 => f_samples_array
+                .into_dimensionality::<ndarray::Ix2>()
+                .map_err(|_| {
+                    PyErr::new::<PyRuntimeError, _>(
+                        "f_samples must be either a 1D array of shape (n,) or a 2D array of shape (n, 1).",
+                    )
+                })?
+                .to_owned(),
+            _ => {
+                return Err(PyErr::new::<PyRuntimeError, _>(
+                    "f_samples must be either a 1D array of shape (n,) or a 2D array of shape (n, 1).",
+                ));
+            }
+        };
+        let f_samples_mat = f_samples_2d.view().into_faer();
 
         Ok(Self {
             inner: Problem::new(

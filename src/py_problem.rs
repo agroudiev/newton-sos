@@ -57,8 +57,8 @@ impl PyProblem {
     /// Initialize the kernel matrix K with the specified native kernel type and parameter
     fn initialize_native_kernel(&mut self, kernel: String, sigma: f64) -> PyResult<()> {
         let kernel = match kernel.as_str() {
-            "gaussian" => Kernel::Gaussian(sigma),
-            "laplacian" => Kernel::Laplacian(sigma),
+            "gaussian" | "Gaussian" | "gauss" | "Gauss" => Kernel::Gaussian(sigma),
+            "laplacian" | "Laplacian" | "laplace" | "Laplace" => Kernel::Laplacian(sigma),
             _ => {
                 return Err(PyErr::new::<PyRuntimeError, _>(format!(
                     "Unsupported kernel type: {}. Supported types are 'gaussian' and 'laplacian'.",

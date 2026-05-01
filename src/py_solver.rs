@@ -51,6 +51,21 @@ impl PySolveResult {
         self.inner.cost
     }
 
+    #[getter]
+    pub fn alpha(&self, py: Python) -> Option<Py<PyArray2<f64>>> {
+        match &self.inner.alpha {
+            Some(mat) => {
+                let ndarray = mat.as_ref().into_ndarray();
+                let array = PyArray2::from_array(
+                    py,
+                    &ndarray.into_dimensionality::<ndarray::Ix2>().unwrap(),
+                );
+                Some(array.into())
+            }
+            None => None,
+        }
+    }
+
     #[pyo3(signature = (problem))]
     #[allow(non_snake_case)]
     pub fn get_B<'py>(&self, py: Python<'py>, problem: &PyProblem) -> PyResult<Py<PyArray2<f64>>> {
